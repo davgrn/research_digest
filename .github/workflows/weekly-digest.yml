@@ -1,0 +1,44 @@
+name: Weekly Science Digest
+
+on:
+  schedule:
+    # Runs at 08:00 UTC every Monday.
+    # Cron: minute hour day-of-month month day-of-week
+    # Change '1' to 0=Sun, 2=Tue, ..., 6=Sat
+    - cron: '0 8 * * 1'
+  workflow_dispatch:  # Manual trigger button in the Actions tab
+
+permissions:
+  issues: write
+
+jobs:
+  digest:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run digest script
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: python digest.py
+
+      - name: Get date for issue title
+        id: date
+        run: echo "date=$(date -u +%Y-%m-%d)" >> "$GITHUB_OUTPUT"
+
+      - name: Create GitHub Issue with digest
+        uses: peter-evans/create-issue-from-file@v5
+        with:
+          title: "📚 Weekly Research Digest — ${{ steps.date.outputs.date }}"
+          content-filepath: ./digest_content.md
+          labels: weekly-digest
