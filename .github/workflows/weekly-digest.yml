@@ -9,6 +9,7 @@ on:
   workflow_dispatch:  # Manual trigger button in the Actions tab
 
 permissions:
+  contents: read
   issues: write
 
 jobs:
