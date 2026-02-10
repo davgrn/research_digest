@@ -1,3 +1,14 @@
+#!/usr/bin/env python3
+from __future__ import annotations
+
+import os
+import re
+import feedparser
+import google.generativeai as genai
+import datetime
+from time import sleep, struct_time
+from calendar import timegm
+
 # ──────────────────────────────────────────────────────────────────────
 # CONFIGURATION — Edit this section to match your interests and feeds
 # ──────────────────────────────────────────────────────────────────────
