@@ -13,14 +13,17 @@ from calendar import timegm
 # CONFIGURATION — Edit this section to match your interests and feeds
 # ──────────────────────────────────────────────────────────────────────
 
-DAYS_BACK = 7  # How far back to look for papers
+DAYS_BACK = 8  # How far back to look for papers
 RELEVANCE_THRESHOLD = 2  # Minimum score to include (papers below this are noise)
-API_SLEEP = 1.5  # Seconds between API calls (respect free-tier rate limits)
+API_SLEEP = 2.5  # Seconds between API calls (respect free-tier rate limits)
 
 # Keyword pre-filter: a paper must contain at least one of these words
 # (case-insensitive) in its title OR abstract to be sent to Gemini.
 # This dramatically reduces API calls on broad feeds like Nature or Science.
 # Set to an empty list to disable and send everything to Gemini.
+KEYWORDS = []
+#Keywords currently disabled, as computational gain is not huge, but may miss out on important papers
+'''
 KEYWORDS = [
     # ── Durable general terms (future-proof) ──
     # These catch new methods regardless of their brand name
@@ -76,6 +79,7 @@ KEYWORDS = [
     "colabdesign", "colabfold", "ligandmpnn", "frameflow", "bindcraft",
     "binderflow", "pxdesign", "dynamicmpnn", "atomworks",
 ]
+'''
 
 # Your scientific profile — be specific, the LLM uses this verbatim.
 INTERESTS = """
@@ -245,7 +249,7 @@ def passes_keyword_filter(title: str, abstract: str) -> bool:
 
 
 def score_paper(model, title: str, abstract: str) -> int:
-    """Ask Gemini to score a paper 0-10 against INTERESTS."""
+    """Ask Gemini to score a paper 0-10 against INTERESTS, with retry."""
     prompt = f"""\
 You are a strict scientific literature assistant.
 Rate the relevance of this paper to the researcher profile below.
@@ -258,13 +262,23 @@ Output ONLY a single integer from 0 to 10. No text, no explanation.
 Title: {title}
 Abstract: {abstract[:3000]}
 """
-    try:
-        resp = model.generate_content(prompt)
-        score = int(re.search(r"\d+", resp.text).group())
-        return min(max(score, 0), 10)
-    except Exception as e:
-        print(f"  ⚠ Scoring failed for '{title[:60]}…': {e}")
-        return 0
+    max_retries = 3
+    for attempt in range(max_retries):
+        try:
+            resp = model.generate_content(prompt)
+            score = int(re.search(r"\d+", resp.text).group())
+            return min(max(score, 0), 10)
+        except Exception as e:
+            err_str = str(e)
+            if "429" in err_str or "quota" in err_str.lower():
+                wait = 40 * (attempt + 1)
+                print(f"  ⏳ Rate limited, waiting {wait}s (attempt {attempt+1}/{max_retries})")
+                sleep(wait)
+            else:
+                print(f"  ⚠ Scoring failed for '{title[:60]}…': {e}")
+                return 0
+    print(f"  ⚠ Gave up after {max_retries} retries for '{title[:60]}…'")
+    return 0
 
 
 def fetch_and_score(model, cutoff: datetime.datetime):
