@@ -14,7 +14,7 @@ from calendar import timegm
 # ──────────────────────────────────────────────────────────────────────
 
 DAYS_BACK = 8  # How far back to look for papers
-RELEVANCE_THRESHOLD = 2  # Minimum score to include (papers below this are noise)
+RELEVANCE_THRESHOLD = 5  # Minimum score to include (papers below this are noise)
 API_SLEEP = 2.5  # Seconds between API calls (respect free-tier rate limits)
 
 # Keyword pre-filter: a paper must contain at least one of these words
