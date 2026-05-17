@@ -199,6 +199,9 @@ FEEDS = [
 
     # ── Other ──
     ("Cellular & Molecular Immunology", "http://feeds.nature.com/cmi/rss/current"),
+
+    # ── arXiv API (replaces standard RSS) ──
+    ("arXiv q-bio (API)", "http://export.arxiv.org/api/query?search_query=cat:q-bio.BM&sortBy=submittedDate&sortOrder=descending&max_results=100"),
 ]
 
 # ──────────────────────────────────────────────────────────────────────
