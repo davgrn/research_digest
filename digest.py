@@ -216,7 +216,7 @@ def init_gemini():
             "GEMINI_API_KEY not set. Export it or add it to GitHub Secrets."
         )
     genai.configure(api_key=api_key)
-    return genai.GenerativeModel("gemini-2.0-flash")
+    return genai.GenerativeModel("gemini-2.5-flash")
 
 
 def parse_entry_date(entry) -> datetime.datetime | None:
