@@ -122,6 +122,23 @@ LOW INTEREST (score 2-4):
 - Drug formulation, delivery, pharmacology
 """
 
+SCORING_INSTRUCTION = f"""\
+You are a strict scientific literature relevance scorer.
+Output ONLY a single integer 0-10. No text, no explanation.
+
+CALIBRATION — most papers should score LOW:
+- 0-1: Completely unrelated (expect ~60% of papers here)
+- 2-4: Tangentially related, wrong subfield (expect ~25%)
+- 5-6: Relevant field but not directly useful (expect ~10%)
+- 7-8: Directly relevant to current work (expect ~4%)
+- 9-10: ONLY for papers you would drop everything to read — exact topic match (expect <1%)
+
+A paper about a protein does NOT automatically score high.
+A paper must match the SPECIFIC topics below, not just the general field.
+
+{INTERESTS}
+"""
+
 # RSS feeds to monitor.
 # Add or remove feeds as needed. Each entry is (label, url).
 FEEDS = [
@@ -252,23 +269,20 @@ def passes_keyword_filter(title: str, abstract: str) -> bool:
 def score_paper(model, title: str, abstract: str) -> int:
     """Ask Gemini to score a paper 0-10 against INTERESTS, with retry."""
     prompt = f"""\
-You are a strict scientific literature assistant.
-Rate the relevance of this paper to the researcher profile below.
-Output ONLY a single integer from 0 to 10. No text, no explanation.
-
---- RESEARCHER PROFILE ---
-{INTERESTS}
-
---- PAPER ---
 Title: {title}
-Abstract: {abstract[:3000]}
+Abstract: {abstract[:1000]}
 """
     max_retries = 3
     for attempt in range(max_retries):
         try:
             resp = model.models.generate_content(
-            model="gemini-2.5-flash-lite",
-            contents=prompt,
+                model="gemini-2.5-flash-lite",
+                config={
+                    "system_instruction": SCORING_INSTRUCTION,
+                    "max_output_tokens": 2,
+                    "temperature": 0.0,
+                },
+                contents=prompt,
             )
             score = int(re.search(r"\d+", resp.text).group())
             return min(max(score, 0), 10)
