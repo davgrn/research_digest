@@ -4,7 +4,7 @@ from __future__ import annotations
 import os
 import re
 import feedparser
-import google.generativeai as genai
+from google import genai
 import datetime
 from time import sleep, struct_time
 from calendar import timegm
@@ -209,14 +209,12 @@ FEEDS = [
 # ──────────────────────────────────────────────────────────────────────
 
 def init_gemini():
-    """Configure the Gemini client from environment or .env."""
     api_key = os.environ.get("GEMINI_API_KEY")
     if not api_key:
         raise RuntimeError(
             "GEMINI_API_KEY not set. Export it or add it to GitHub Secrets."
         )
-    genai.configure(api_key=api_key)
-    return genai.GenerativeModel("gemini-2.5-flash")
+    return genai.Client(api_key=api_key)
 
 
 def parse_entry_date(entry) -> datetime.datetime | None:
@@ -268,7 +266,10 @@ Abstract: {abstract[:3000]}
     max_retries = 3
     for attempt in range(max_retries):
         try:
-            resp = model.generate_content(prompt)
+            resp = model.models.generate_content(
+            model="gemini-2.5-flash-lite",
+            contents=prompt,
+            )
             score = int(re.search(r"\d+", resp.text).group())
             return min(max(score, 0), 10)
         except Exception as e:
