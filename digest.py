@@ -267,25 +267,23 @@ def passes_keyword_filter(title: str, abstract: str) -> bool:
 
 
 def score_paper(model, title: str, abstract: str) -> int:
-    """Ask Gemini to score a paper 0-10 against INTERESTS, with retry."""
-    prompt = f"""\
-Title: {title}
-Abstract: {abstract[:1000]}
-"""
+    """Two-pass scoring: title first, abstract only if borderline."""
+    # Pass 1: title only
     max_retries = 3
     for attempt in range(max_retries):
         try:
             resp = model.models.generate_content(
-                model="gemini-2.5-flash-lite",
+                model="gemini-2.0-flash",
                 config={
                     "system_instruction": SCORING_INSTRUCTION,
                     "max_output_tokens": 2,
                     "temperature": 0.0,
                 },
-                contents=prompt,
+                contents=f"Title: {title}",
             )
-            score = int(re.search(r"\d+", resp.text).group())
-            return min(max(score, 0), 10)
+            title_score = int(re.search(r"\d+", resp.text).group())
+            title_score = min(max(title_score, 0), 10)
+            break
         except Exception as e:
             err_str = str(e)
             if "429" in err_str or "quota" in err_str.lower():
@@ -295,8 +293,38 @@ Abstract: {abstract[:1000]}
             else:
                 print(f"  ⚠ Scoring failed for '{title[:60]}…': {e}")
                 return 0
-    print(f"  ⚠ Gave up after {max_retries} retries for '{title[:60]}…'")
-    return 0
+    else:
+        return 0
+
+    # Clear-cut cases: skip abstract
+    if title_score <= 2 or title_score >= 8:
+        return title_score
+
+    # Pass 2: borderline (3-7), refine with abstract
+    sleep(API_SLEEP)
+    for attempt in range(max_retries):
+        try:
+            resp = model.models.generate_content(
+                model="gemini-2.0-flash",
+                config={
+                    "system_instruction": SCORING_INSTRUCTION,
+                    "max_output_tokens": 2,
+                    "temperature": 0.0,
+                },
+                contents=f"Title: {title}\nAbstract: {abstract[:1000]}",
+            )
+            score = int(re.search(r"\d+", resp.text).group())
+            return min(max(score, 0), 10)
+        except Exception as e:
+            err_str = str(e)
+            if "429" in err_str or "quota" in err_str.lower():
+                wait = 40 * (attempt + 1)
+                print(f"  ⏳ Rate limited, waiting {wait}s")
+                sleep(wait)
+            else:
+                print(f"  ⚠ Rescore failed for '{title[:60]}…': {e}")
+                return title_score
+    return title_score
 
 
 def fetch_and_score(model, cutoff: datetime.datetime):
@@ -361,24 +389,24 @@ def fetch_and_score(model, cutoff: datetime.datetime):
 
 
 def write_digest(papers: list, output_path: str = "digest_content.md"):
-    """Write the Markdown digest as a ranked list grouped by importance tier."""
+    """Write a compact Markdown digest: 5+ only, abstracts only for 7+."""
     today = datetime.date.today().isoformat()
+
+    # Filter to 5+ only
+    papers = [p for p in papers if p["score"] >= 5]
+
     lines = [
         f"# 📚 Weekly Research Digest — {today}\n",
-        f"**Papers scanned across {len(FEEDS)} feeds · "
-        f"Showing {len(papers)} papers scoring ≥ {RELEVANCE_THRESHOLD}/10, "
-        f"ranked by relevance**\n",
+        f"**Showing {len(papers)} papers scoring ≥ 5/10, ranked by relevance**\n",
     ]
 
     if not papers:
-        lines.append("\n_No papers met the relevance threshold this week._\n")
+        lines.append("\n_No papers scored 5 or above this week._\n")
     else:
-        # Group into tiers
         tiers = [
             ("🔴 Critical (9-10)", lambda p: p["score"] >= 9),
             ("🟠 High Interest (7-8)", lambda p: 7 <= p["score"] <= 8),
             ("🟡 Moderate Interest (5-6)", lambda p: 5 <= p["score"] <= 6),
-            ("🟢 Low Interest (2-4)", lambda p: 2 <= p["score"] <= 4),
         ]
 
         for tier_label, tier_filter in tiers:
@@ -390,7 +418,9 @@ def write_digest(papers: list, output_path: str = "digest_content.md"):
             for p in tier_papers:
                 lines.append(f"**[{p['score']}/10] {p['title']}**")
                 lines.append(f"{p['source']} · {p['date']} · 🔗 {p['link']}\n")
-                lines.append(f"> {p['abstract']}…\n")
+                # Abstract only for 7+
+                if p["score"] >= 7:
+                    lines.append(f"> {p['abstract']}…\n")
 
     with open(output_path, "w", encoding="utf-8") as f:
         f.write("\n".join(lines))
