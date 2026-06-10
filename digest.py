@@ -82,21 +82,22 @@ KEYWORDS = [
 '''
 
 # Your scientific profile — be specific, the LLM uses this verbatim.
-INTERESTS = """
+INTERESTS = """\
 I am a PhD student working in computational protein design with a focus on
 G protein-coupled receptors (GPCRs), chemokine receptor signaling, and
-allosteric mechanism engineering.
+allosteric mechanism engineering. I care about METHODS and ENGINEERING
+approaches, not purely biological or clinical findings.
 
 CRITICAL INTEREST (score 9-10):
 - GPCR structure, activation mechanisms, and signaling (especially class A GPCRs)
 - Computational design of GPCRs and receptor-peptide signaling complexes
 - GPCR allosteric modulation and signal transduction design
 - Chemokine receptors (CXCR4, CXCL12) — structure, modulation, oligomerization
-- AI/ML-driven protein design methods and benchmarks
+- New AI/ML methods for protein design, structure prediction, or binding prediction
 - Directed evolution of GPCRs in mammalian or yeast systems
 
 HIGH INTEREST (score 7-8):
-- De novo protein binder design (BindCraft, RFdiffusion, PXDesign, ProteinMPNN)
+- De novo protein design of any kind (binders, enzymes, receptors, channels, etc.)
 - Protein-peptide binding prediction and affinity ranking
 - Multi-state / dynamic protein design and allosteric switches
 - Deep mutational scanning of receptors and protein interfaces
@@ -104,37 +105,52 @@ HIGH INTEREST (score 7-8):
 - DNA assembly methods (Golden Gate, gene library construction from oligopools)
 - Structural biology of receptor-ligand complexes (cryo-EM, crystallography)
 - Protein language models for function prediction and design
+- New high-throughput screening or design-build-test platforms for protein engineering
 
 MODERATE INTEREST (score 5-6):
 - General protein structure prediction improvements (AlphaFold, Boltz, scoring metrics)
+- Allosteric mechanisms in ANY protein (not just GPCRs)
+- Synthetic receptor or engineered receptor systems of any kind
 - Peptide binder design with language models or contrastive learning
-- GPCR allostery reviews and general signaling pathway analysis
 - Functional genomics platforms and high-throughput variant characterization
 - Enzyme design and catalysis
 - Molecular dynamics and enhanced sampling methods
 - Orthogonal protein-protein interaction design
+- Novel cloning, expression, or assay methods relevant to protein engineering
+- Synthetic cell engineering and synNotch receptors
+- Chemotaxis mechanisms (unless tied to receptor design)
+- CAR-T cell therapy reviews (unless describing novel receptor engineering)
+- Mechanistic insights into disease-relevant receptors or signaling molecules
+  (e.g. "receptor X drives immune evasion through allosteric mechanism Y")
+- Identification of new molecular targets with structural/mechanistic rationale
 
 LOW INTEREST (score 2-4):
-- Synthetic cell engineering and synNotch receptors
-- CAR-T cell therapy reviews
-- Chemotaxis mechanisms (unless tied to receptor design)
-- General cancer biology and clinical oncology
-- Drug formulation, delivery, pharmacology
+- Drug formulation, delivery, pharmacology (unless about receptor mechanism)
+
+IRRELEVANT (score 0-1):
+- Immune repertoire profiling, T/B cell population studies, clonal expansion analysis
+- Clinical trials, patient outcomes, survival statistics
+- Observational studies without mechanistic insight
+- Pure genomics/transcriptomics without structural or mechanistic context
+- Plant biology, ecology, epidemiology
+- Neuroscience, behavioral science
 """
 
 SCORING_INSTRUCTION = f"""\
 You are a strict scientific literature relevance scorer.
 Output ONLY a single integer 0-10. No text, no explanation.
 
-CALIBRATION — most papers should score LOW:
-- 0-1: Completely unrelated (expect ~60% of papers here)
-- 2-4: Tangentially related, wrong subfield (expect ~25%)
-- 5-6: Relevant field but not directly useful (expect ~10%)
-- 7-8: Directly relevant to current work (expect ~4%)
-- 9-10: ONLY for papers you would drop everything to read — exact topic match (expect <1%)
+KEY PRINCIPLE: Score based on METHODOLOGICAL relevance to protein engineering
+and design, NOT based on biological system alone. A paper about an interesting
+method applied to an obscure protein scores HIGHER than a paper about a
+well-known receptor that is purely clinical or observational.
 
-A paper about a protein does NOT automatically score high.
-A paper must match the SPECIFIC topics below, not just the general field.
+CALIBRATION:
+- 0-1: Completely unrelated (expect ~60% of papers here)
+- 2-4: Tangentially related, wrong focus (expect ~25%)
+- 5-6: Relevant methods or adjacent field (expect ~10%)
+- 7-8: Directly relevant to current work (expect ~4%)
+- 9-10: Exact topic match, drop everything to read (expect <1%)
 
 {INTERESTS}
 """
