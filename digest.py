@@ -273,7 +273,7 @@ def score_paper(model, title: str, abstract: str) -> int:
     for attempt in range(max_retries):
         try:
             resp = model.models.generate_content(
-                model="gemini-2.0-flash",
+                model="gemini-2.5-flash-lite",
                 config={
                     "system_instruction": SCORING_INSTRUCTION,
                     "max_output_tokens": 2,
@@ -305,7 +305,7 @@ def score_paper(model, title: str, abstract: str) -> int:
     for attempt in range(max_retries):
         try:
             resp = model.models.generate_content(
-                model="gemini-2.0-flash",
+                model="gemini-2.5-flash-lite",
                 config={
                     "system_instruction": SCORING_INSTRUCTION,
                     "max_output_tokens": 2,
