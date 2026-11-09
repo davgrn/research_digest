@@ -5,6 +5,7 @@ import os
 import re
 import feedparser
 from google import genai
+from google.genai import types
 import datetime
 from time import sleep, struct_time
 from calendar import timegm
@@ -247,7 +248,11 @@ def init_gemini():
         raise RuntimeError(
             "GEMINI_API_KEY not set. Export it or add it to GitHub Secrets."
         )
-    return genai.Client(api_key=api_key)
+
+    return genai.Client(
+        api_key=api_key,
+        http_options=types.HttpOptions(api_version="v1beta"),
+    )
 
 
 def parse_entry_date(entry) -> datetime.datetime | None:
